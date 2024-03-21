@@ -7,15 +7,24 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 )
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
+	var wg sync.WaitGroup
+
 	fmt.Println("domain, hasMX, hasSPF, spfRecord, hasDMARC, dmarcRecord")
 
 	for scanner.Scan() {
-		checkDomain(scanner.Text())
+		wg.Add(1)
+		go func(domain string) {
+			defer wg.Done()
+			checkDomain(domain)
+		}(scanner.Text())
 	}
+
+	wg.Wait()
 
 	if err := scanner.Err(); err != nil {
 		log.Fatalf("error: could not read from input: %v\n", err)
